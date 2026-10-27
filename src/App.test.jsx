@@ -17,6 +17,7 @@ const summary = {
   to: '2026-10-27',
   totalSpent: 1500,
   totalIncome: 28500,
+  incomeBySource: [{ source: 'Employer Salary', total: 28500, count: 1 }],
   byCategory: [{ category: 'GROCERIES', total: 1500, count: 2 }],
 };
 
@@ -31,11 +32,14 @@ describe('App', () => {
     getTransactions.mockResolvedValue(transactions);
   });
 
-  it('shows totals, categories and transactions once data loads', async () => {
+  it('shows the statement, money in and out, and transactions once data loads', async () => {
     render(<App />);
 
     expect(await screen.findByText('Checkers')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Where it went' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Statement information' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Money in' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Money out' })).toBeInTheDocument();
+    expect(screen.getAllByText('Employer Salary').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Groceries').length).toBeGreaterThan(0);
   });
 

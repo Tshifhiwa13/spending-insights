@@ -1,14 +1,18 @@
 import { categoryLabel } from '../data/categories';
 import { formatDate, formatMoney } from '../utils/format';
 
-const ROWS_SHOWN = 15;
+const ROWS_SHOWN = 12;
 
 export default function TransactionsTable({ transactions }) {
   return (
-    <section className="panel" aria-labelledby="recent-heading">
-      <h2 id="recent-heading">Recent transactions</h2>
+    <section className="card" aria-labelledby="recent-heading">
+      <header className="band">
+        <h2 id="recent-heading">Recent transactions</h2>
+        <span className="band-note">{transactions.length} in period</span>
+      </header>
+
       {transactions.length === 0 ? (
-        <p className="muted">No transactions in this period.</p>
+        <p className="muted card-body">No transactions in this period.</p>
       ) : (
         <div className="table-wrap">
           <table>
@@ -28,7 +32,7 @@ export default function TransactionsTable({ transactions }) {
                     <td>{formatDate(t.date)}</td>
                     <td>{t.merchant}</td>
                     <td>{categoryLabel(t.category)}</td>
-                    <td className={`amount ${isIncome ? 'positive' : ''}`}>
+                    <td className={`amount ${isIncome ? 'money-in' : 'money-out'}`}>
                       {isIncome ? '+' : '−'}
                       {formatMoney(t.amount)}
                     </td>

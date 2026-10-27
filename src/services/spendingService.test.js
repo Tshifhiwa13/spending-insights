@@ -13,6 +13,14 @@ describe('spendingService', () => {
     expect(sum).toBeCloseTo(summary.totalSpent, 2);
   });
 
+  it('money in by source adds up to total income', async () => {
+    const summary = await service.getSummary({ from: '2026-01-01', to: '2026-06-30' });
+    const sum = summary.incomeBySource.reduce((acc, s) => acc + s.total, 0);
+
+    expect(summary.incomeBySource[0].source).toBe('Employer Salary');
+    expect(sum).toBeCloseTo(summary.totalIncome, 2);
+  });
+
   it('counts the salary as income once per month', async () => {
     const june = await service.getSummary({ from: '2026-06-01', to: '2026-06-30' });
 

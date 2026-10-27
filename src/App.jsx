@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import CategoryBreakdown from './components/CategoryBreakdown';
+import MoneySummary from './components/MoneySummary';
 import PeriodPicker from './components/PeriodPicker';
-import SummaryTotals from './components/SummaryTotals';
+import SpendingDonut from './components/SpendingDonut';
+import StatementInfo from './components/StatementInfo';
 import TransactionsTable from './components/TransactionsTable';
+import { categoryLabel } from './data/categories';
 import { spendingService } from './services/spendingService';
 import { lastNDays } from './utils/dates';
 
@@ -33,13 +35,15 @@ export default function App() {
   }, [range, reloadKey]);
 
   return (
-    <div className="page">
-      <header className="page-header">
-        <h1>Your spending</h1>
-        <PeriodPicker value={days} onChange={setDays} />
+    <>
+      <header className="topbar">
+        <div className="topbar-inner">
+          <h1>Your spending</h1>
+          <PeriodPicker value={days} onChange={setDays} />
+        </div>
       </header>
 
-      <main aria-busy={state.status === 'loading'}>
+      <main className="page" aria-busy={state.status === 'loading'}>
         {state.status === 'loading' && <p className="status">Loading your spending…</p>}
 
         {state.status === 'error' && (
@@ -51,16 +55,46 @@ export default function App() {
           </div>
         )}
 
-        {state.status === 'ready' && (
-          <>
-            <SummaryTotals totalSpent={state.summary.totalSpent} totalIncome={state.summary.totalIncome} />
-            <div className="columns">
-              <CategoryBreakdown categories={state.summary.byCategory} />
-              <TransactionsTable transactions={state.transactions} />
-            </div>
-          </>
-        )}
+        {state.status === 'ready' && <Dashboard summary={state.summary} transactions={state.transactions} />}
       </main>
+    </>
+  );
+}
+
+function Dashboard({ summary, transactions }) {
+  const moneyIn = summary.incomeBySource.map((s) => ({ label: s.source, total: s.total }));
+  const moneyOut = summary.byCategory.map((c) => ({ label: categoryLabel(c.category), total: c.total }));
+
+  return (
+    <div className="dashboard">
+      <StatementInfo
+        from={summary.from}
+        to={summary.to}
+        totalIncome={summary.totalIncome}
+        totalSpent={summary.totalSpent}
+      />
+
+      <div className="grid-2">
+        <MoneySummary
+          title="Money in"
+          tone="in"
+          total={summary.totalIncome}
+          rows={moneyIn}
+          emptyText="No money received in this period."
+        />
+        <MoneySummary
+          title="Money out"
+          tone="out"
+          total={summary.totalSpent}
+          rows={moneyOut}
+          emptyText="No spending in this period."
+        />
+      </div>
+
+      <div className="grid-2 grid-wide-right">
+        <SpendingDonut categories={summary.byCategory} totalSpent={summary.totalSpent} />
+        <TransactionsTable transactions={transactions} />
+      </div>
     </div>
   );
 }
