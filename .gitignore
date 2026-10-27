@@ -1,14 +1,7 @@
-# Java / Maven
-backend/target/
-*.class
-
-# Node
-frontend/node_modules/
-frontend/dist/
-frontend/coverage/
-
-# IDE / OS
-.idea/
+node_modules/
+dist/
+coverage/
 .vscode/
-*.iml
+.idea/
 .DS_Store
+*.log

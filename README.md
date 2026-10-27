@@ -1,80 +1,75 @@
 # Customer Spending Insights Dashboard
 
-A responsive dashboard that shows a customer's spending by period and category, backed by a Java (Spring Boot) API serving mocked transaction data.
+A responsive dashboard that shows a customer's spending by period and category, built with React and JavaScript using mocked transaction data.
 
 ## Tech stack
 
-| Layer    | Technology                                   |
-|----------|----------------------------------------------|
-| Frontend | React 18, TypeScript, Vite, Vitest           |
-| Backend  | Java 21, Spring Boot 3, JUnit 5              |
-| Runtime  | Docker, Docker Compose, Nginx                |
-| CI       | GitHub Actions                               |
+| Area      | Technology                                   |
+|-----------|----------------------------------------------|
+| UI        | React 18, JavaScript, HTML, CSS              |
+| Build     | Vite                                         |
+| Testing   | Vitest, React Testing Library                |
+| Quality   | ESLint                                       |
+| Runtime   | Docker, Nginx                                |
+| CI        | GitHub Actions                               |
 
-## Run with Docker (recommended)
+## Run with Docker
 
-Requirements: Docker Desktop (or Docker Engine with Compose).
+Requirements: Docker Desktop.
 
 ```bash
-docker compose up --build
+docker build -t spending-insights .
+docker run --rm -p 3000:80 spending-insights
 ```
 
-- Dashboard: http://localhost:3000
-- API: http://localhost:8080/api/insights/summary
-- Health check: http://localhost:8080/actuator/health
+Open http://localhost:3000.
+
+The Docker build also runs the linter and tests, so a broken build never produces an image.
 
 ## Run locally for development
 
-Requirements: Java 21, Maven 3.9+, Node.js 20+.
+Requirements: Node.js 20+.
 
 ```bash
-# Terminal 1 — backend on :8080
-cd backend
-mvn spring-boot:run
-
-# Terminal 2 — frontend on :5173 (proxies /api to :8080)
-cd frontend
 npm install
 npm run dev
 ```
 
-## Test
+Open http://localhost:5173. Changes appear instantly.
+
+## Test and lint
 
 ```bash
-cd backend && mvn verify          # backend unit + API tests
-cd frontend && npm test           # frontend component tests
-cd frontend && npm run typecheck  # TypeScript checks
+npm test          # run all tests once
+npm run test:watch  # re-run tests as you edit
+npm run lint      # check code quality
+npm run build     # production build into dist/
 ```
-
-## API
-
-| Method | Endpoint               | Query parameters                                  | Description                                |
-|--------|------------------------|---------------------------------------------------|--------------------------------------------|
-| GET    | `/api/transactions`    | `from`, `to` (YYYY-MM-DD), `category` (optional) | Transactions in range, newest first        |
-| GET    | `/api/insights/summary`| `from`, `to` (YYYY-MM-DD)                         | Totals spent and received, by category     |
-
-If `from`/`to` are omitted, the last 30 days are used. Invalid input returns `400` with an RFC 7807 problem-details body.
-
-Mock data covers the last 180 days and is generated with a fixed seed, so it's the same on every start.
 
 ## Project structure
 
 ```
-backend/    Spring Boot API (mock data, business logic, tests)
-frontend/   React app (dashboard UI, API client, tests)
-.github/    CI pipeline
-docker-compose.yml
+src/
+  components/   UI pieces (period picker, totals, category breakdown, transactions table)
+  data/         Mock transaction generator and category labels
+  services/     Mock data service with an async, API-like interface
+  utils/        Date and currency formatting helpers
+  App.jsx       Page layout, data loading, loading and error states
 ```
+
+## Mock data
+
+About 6 months of transactions are generated in the browser, ending today, using a fixed random seed. The data is the same on every load, and the most recent periods always have data. Amounts are in South African rand (ZAR).
 
 ## Design decisions
 
-- **Mock data lives behind a repository class**, so swapping in a real database later only touches one class.
-- **Nginx proxies `/api` to the backend**, so the browser talks to one origin and no CORS setup is needed.
-- **Time is injected via `Clock`**, which keeps date-based tests deterministic.
+- **The data service behaves like a real API.** It's asynchronous, validates its input and adds a short delay, so the UI handles loading and error states properly. Switching to a real backend later means changing only `spendingService.js`.
+- **Components are small and focused**, each owning one part of the page, which keeps them easy to test and change.
+- **Accessibility is built in:** semantic HTML, labelled sections and tables, `aria-pressed` on period buttons, visible keyboard focus, and dark mode and reduced-motion support.
 
 ## Roadmap
 
-- [ ] Spending trend chart
-- [ ] Transaction search, filtering, sorting and pagination
+- [ ] Spending trend chart over time
+- [ ] Transactions page with search, category filter, sorting and pagination
 - [ ] Custom date range picker
 - [ ] End-to-end tests (Playwright)
