@@ -3,13 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 
-const { getSummary, getTransactions } = vi.hoisted(() => ({
+const { getSummary, getTransactions, getMonthlyTotals } = vi.hoisted(() => ({
   getSummary: vi.fn(),
   getTransactions: vi.fn(),
+  getMonthlyTotals: vi.fn(),
 }));
 
 vi.mock('./services/spendingService', () => ({
-  spendingService: { getSummary, getTransactions },
+  spendingService: { getSummary, getTransactions, getMonthlyTotals },
 }));
 
 const summary = {
@@ -25,11 +26,14 @@ const transactions = [
   { id: 'txn-1', date: '2026-10-20', merchant: 'Checkers', category: 'GROCERIES', type: 'DEBIT', amount: 1500 },
 ];
 
+const monthly = [{ month: '2026-10', moneyIn: 28500, moneyOut: 1500 }];
+
 describe('App', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     getSummary.mockResolvedValue(summary);
     getTransactions.mockResolvedValue(transactions);
+    getMonthlyTotals.mockResolvedValue(monthly);
   });
 
   it('shows the statement, money in and out, and transactions once data loads', async () => {
@@ -37,6 +41,7 @@ describe('App', () => {
 
     expect(await screen.findByText('Checkers')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Statement information' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Money in and out by month' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Money in' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Money out' })).toBeInTheDocument();
     expect(screen.getAllByText('Employer Salary').length).toBeGreaterThan(0);
@@ -51,6 +56,7 @@ describe('App', () => {
 
     expect(screen.getByRole('button', { name: '3 months' })).toHaveAttribute('aria-pressed', 'true');
     expect(getSummary).toHaveBeenCalledTimes(2);
+    expect(getMonthlyTotals).toHaveBeenCalledTimes(2);
   });
 
   it('shows an error with a retry button when loading fails', async () => {
