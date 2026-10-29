@@ -4,7 +4,7 @@ import MonthlyTrend from './components/MonthlyTrend';
 import PeriodPicker from './components/PeriodPicker';
 import SpendingDonut from './components/SpendingDonut';
 import StatementInfo from './components/StatementInfo';
-import TransactionsTable from './components/TransactionsTable';
+import TransactionsPanel from './components/TransactionsPanel';
 import { categoryLabel } from './data/categories';
 import { spendingService } from './services/spendingService';
 import { lastNDays } from './utils/dates';
@@ -19,13 +19,9 @@ export default function App() {
     let cancelled = false;
     setState({ status: 'loading' });
 
-    Promise.all([
-      spendingService.getSummary(range),
-      spendingService.getTransactions(range),
-      spendingService.getMonthlyTotals(range),
-    ])
-      .then(([summary, transactions, monthly]) => {
-        if (!cancelled) setState({ status: 'ready', summary, transactions, monthly });
+    Promise.all([spendingService.getSummary(range), spendingService.getMonthlyTotals(range)])
+      .then(([summary, monthly]) => {
+        if (!cancelled) setState({ status: 'ready', summary, monthly });
       })
       .catch((error) => {
         if (cancelled) return;
@@ -60,15 +56,13 @@ export default function App() {
           </div>
         )}
 
-        {state.status === 'ready' && (
-          <Dashboard summary={state.summary} transactions={state.transactions} monthly={state.monthly} />
-        )}
+        {state.status === 'ready' && <Dashboard summary={state.summary} monthly={state.monthly} range={range} />}
       </main>
     </>
   );
 }
 
-function Dashboard({ summary, transactions, monthly }) {
+function Dashboard({ summary, monthly, range }) {
   const moneyIn = summary.incomeBySource.map((s) => ({ label: s.source, total: s.total }));
   const moneyOut = summary.byCategory.map((c) => ({ label: categoryLabel(c.category), total: c.total }));
 
@@ -102,7 +96,7 @@ function Dashboard({ summary, transactions, monthly }) {
 
       <div className="grid-2 grid-wide-right">
         <SpendingDonut categories={summary.byCategory} totalSpent={summary.totalSpent} />
-        <TransactionsTable transactions={transactions} />
+        <TransactionsPanel range={range} />
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { CATEGORIES } from '../data/categories';
 import { generateTransactions } from '../data/mockTransactions';
 
 const DEFAULT_LATENCY_MS = 300;
@@ -23,11 +24,20 @@ export function createSpendingService({
     return transactions.filter((t) => t.date >= from && t.date <= to);
   }
 
-  /** Transactions in the range, newest first, optionally for one category. */
-  async function getTransactions({ from, to, category } = {}) {
+  /**
+   * Transactions in the range, newest first.
+   * Optional filters: `category` (exact match) and `search` (merchant name, case-insensitive).
+   */
+  async function getTransactions({ from, to, category, search } = {}) {
     await wait(latencyMs);
+    if (category && !CATEGORIES[category]) {
+      throw new Error(`Unknown category "${category}".`);
+    }
+    const query = (search ?? '').trim().toLowerCase();
+
     return inRange({ from, to })
       .filter((t) => !category || t.category === category)
+      .filter((t) => !query || t.merchant.toLowerCase().includes(query))
       .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
   }
 

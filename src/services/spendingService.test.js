@@ -54,6 +54,31 @@ describe('spendingService', () => {
     expect(results.every((t) => t.category === 'GROCERIES')).toBe(true);
   });
 
+  it('searches merchants, ignoring upper and lower case', async () => {
+    const results = await service.getTransactions({ from: '2026-01-01', to: '2026-06-30', search: '  cHeCkErS ' });
+
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((t) => t.merchant === 'Checkers')).toBe(true);
+  });
+
+  it('combines search and category filters', async () => {
+    const results = await service.getTransactions({
+      from: '2026-01-01',
+      to: '2026-06-30',
+      category: 'TRANSPORT',
+      search: 'shell',
+    });
+
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((t) => t.category === 'TRANSPORT' && t.merchant === 'Shell')).toBe(true);
+  });
+
+  it('rejects an unknown category', async () => {
+    await expect(
+      service.getTransactions({ from: '2026-01-01', to: '2026-06-30', category: 'NOT_REAL' }),
+    ).rejects.toThrow('Unknown category');
+  });
+
   it('rejects a reversed date range', async () => {
     await expect(service.getTransactions({ from: '2026-02-01', to: '2026-01-01' })).rejects.toThrow(
       '"from" must be on or before "to"',
