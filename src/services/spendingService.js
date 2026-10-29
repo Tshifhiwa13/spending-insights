@@ -66,7 +66,25 @@ export function createSpendingService({
     };
   }
 
-  return { getTransactions, getSummary };
+  /** Money in and out per calendar month in the range, oldest month first. */
+  async function getMonthlyTotals({ from, to } = {}) {
+    await wait(latencyMs);
+    const months = new Map();
+
+    for (const t of inRange({ from, to })) {
+      const month = t.date.slice(0, 7); // "2026-10"
+      const totals = months.get(month) ?? { month, moneyIn: 0, moneyOut: 0 };
+      if (t.type === 'CREDIT') totals.moneyIn += t.amount;
+      else totals.moneyOut += t.amount;
+      months.set(month, totals);
+    }
+
+    return [...months.values()]
+      .map((m) => ({ ...m, moneyIn: roundCents(m.moneyIn), moneyOut: roundCents(m.moneyOut) }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+  }
+
+  return { getTransactions, getSummary, getMonthlyTotals };
 }
 
 export const spendingService = createSpendingService();

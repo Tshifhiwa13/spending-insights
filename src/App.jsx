@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import MoneySummary from './components/MoneySummary';
+import MonthlyTrend from './components/MonthlyTrend';
 import PeriodPicker from './components/PeriodPicker';
 import SpendingDonut from './components/SpendingDonut';
 import StatementInfo from './components/StatementInfo';
@@ -18,9 +19,13 @@ export default function App() {
     let cancelled = false;
     setState({ status: 'loading' });
 
-    Promise.all([spendingService.getSummary(range), spendingService.getTransactions(range)])
-      .then(([summary, transactions]) => {
-        if (!cancelled) setState({ status: 'ready', summary, transactions });
+    Promise.all([
+      spendingService.getSummary(range),
+      spendingService.getTransactions(range),
+      spendingService.getMonthlyTotals(range),
+    ])
+      .then(([summary, transactions, monthly]) => {
+        if (!cancelled) setState({ status: 'ready', summary, transactions, monthly });
       })
       .catch((error) => {
         if (cancelled) return;
@@ -55,13 +60,15 @@ export default function App() {
           </div>
         )}
 
-        {state.status === 'ready' && <Dashboard summary={state.summary} transactions={state.transactions} />}
+        {state.status === 'ready' && (
+          <Dashboard summary={state.summary} transactions={state.transactions} monthly={state.monthly} />
+        )}
       </main>
     </>
   );
 }
 
-function Dashboard({ summary, transactions }) {
+function Dashboard({ summary, transactions, monthly }) {
   const moneyIn = summary.incomeBySource.map((s) => ({ label: s.source, total: s.total }));
   const moneyOut = summary.byCategory.map((c) => ({ label: categoryLabel(c.category), total: c.total }));
 
@@ -73,6 +80,8 @@ function Dashboard({ summary, transactions }) {
         totalIncome={summary.totalIncome}
         totalSpent={summary.totalSpent}
       />
+
+      <MonthlyTrend months={monthly} />
 
       <div className="grid-2">
         <MoneySummary

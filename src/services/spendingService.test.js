@@ -27,6 +27,16 @@ describe('spendingService', () => {
     expect(june.totalIncome).toBe(MONTHLY_SALARY);
   });
 
+  it('monthly totals add up to the summary totals', async () => {
+    const range = { from: '2026-01-01', to: '2026-06-30' };
+    const months = await service.getMonthlyTotals(range);
+    const summary = await service.getSummary(range);
+
+    expect(months.map((m) => m.month)).toEqual(['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06']);
+    expect(months.reduce((sum, m) => sum + m.moneyOut, 0)).toBeCloseTo(summary.totalSpent, 2);
+    expect(months.reduce((sum, m) => sum + m.moneyIn, 0)).toBeCloseTo(summary.totalIncome, 2);
+  });
+
   it('returns transactions in range, newest first', async () => {
     const results = await service.getTransactions({ from: '2026-06-17', to: '2026-06-30' });
 
