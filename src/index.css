@@ -144,6 +144,27 @@ th { color: var(--muted); font-weight: 500; }
   color: var(--link); text-decoration: underline;
 }
 
+/* ---- Sorting and pagination ---- */
+.sort-button {
+  font: inherit; color: inherit; font-weight: inherit; background: none; border: 0; padding: 0;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;
+}
+.sort-icon { font-size: 0.7rem; opacity: 0.7; }
+th[aria-sort='ascending'],
+th[aria-sort='descending'] { color: var(--ink); }
+
+.pagination {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+  gap: 0.75rem; padding: 0.75rem 1.25rem 1rem; font-size: 0.9rem;
+}
+.pagination-summary { margin: 0; color: var(--muted); }
+.pagination-controls { display: flex; align-items: center; gap: 0.75rem; }
+.pagination button {
+  font: inherit; padding: 0.4rem 0.8rem; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--surface); color: var(--ink); cursor: pointer;
+}
+.pagination button:disabled { opacity: 0.45; cursor: not-allowed; }
+
 /* ---- States ---- */
 .muted, .status { color: var(--muted); }
 .status-error { color: var(--red-text); }
