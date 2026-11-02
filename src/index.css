@@ -59,6 +59,20 @@ h1, h2 { margin: 0; }
 .period-picker button:focus-visible { outline: 3px solid var(--blue); outline-offset: -3px; }
 button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 
+/* ---- Custom date range (inside the navy top bar) ---- */
+.topbar-custom { padding-top: 0; }
+.custom-range { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.75rem; width: 100%; }
+.custom-range .field label { color: rgba(255, 255, 255, 0.85); }
+.custom-range-actions { display: flex; gap: 0.5rem; }
+.button-primary,
+.button-secondary {
+  font: inherit; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--on-navy);
+}
+.button-primary { background: var(--on-navy); color: var(--navy-deep); font-weight: 600; }
+.button-secondary { background: transparent; color: var(--on-navy); }
+.range-error { flex-basis: 100%; margin: 0; color: #ffd6d6; font-weight: 600; }
+
 /* ---- Layout ---- */
 .page { max-width: 1100px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
 .dashboard { display: grid; gap: 1rem; }

@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { lastNDays } from './utils/dates';
 
 const { getSummary, getTransactions, getTransactionPage, getMonthlyTotals } = vi.hoisted(() => ({
   getSummary: vi.fn(),
@@ -59,6 +60,35 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: '3 months' })).toHaveAttribute('aria-pressed', 'true');
     expect(getSummary).toHaveBeenCalledTimes(2);
     expect(getMonthlyTotals).toHaveBeenCalledTimes(2);
+  });
+
+  it('applies a custom date range', async () => {
+    render(<App />);
+    await screen.findByText('Checkers');
+    const from = lastNDays(60).from;
+    const to = lastNDays(30).from;
+
+    await userEvent.click(screen.getByRole('button', { name: 'Custom' }));
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: from } });
+    fireEvent.change(screen.getByLabelText('To'), { target: { value: to } });
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    await waitFor(() => expect(getSummary).toHaveBeenLastCalledWith({ from, to }));
+    expect(screen.getByRole('button', { name: 'Custom' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('form', { name: 'Custom date range' })).not.toBeInTheDocument();
+  });
+
+  it('explains an invalid custom range instead of applying it', async () => {
+    render(<App />);
+    await screen.findByText('Checkers');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Custom' }));
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: lastNDays(10).from } });
+    fireEvent.change(screen.getByLabelText('To'), { target: { value: lastNDays(30).from } });
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('start date must be on or before the end date');
+    expect(getSummary).toHaveBeenCalledTimes(1);
   });
 
   it('shows an error with a retry button when loading fails', async () => {

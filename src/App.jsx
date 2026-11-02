@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import CustomRangeForm from './components/CustomRangeForm';
 import MoneySummary from './components/MoneySummary';
 import MonthlyTrend from './components/MonthlyTrend';
 import PeriodPicker from './components/PeriodPicker';
@@ -6,14 +7,23 @@ import SpendingDonut from './components/SpendingDonut';
 import StatementInfo from './components/StatementInfo';
 import TransactionsPanel from './components/TransactionsPanel';
 import { categoryLabel } from './data/categories';
+import { DAYS_OF_HISTORY } from './data/mockTransactions';
 import { spendingService } from './services/spendingService';
 import { lastNDays } from './utils/dates';
 
 export default function App() {
-  const [days, setDays] = useState(30);
+  // Either a preset ({ days: 30 }) or a custom range ({ from, to }).
+  const [period, setPeriod] = useState({ days: 30 });
+  const [isCustomOpen, setIsCustomOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [state, setState] = useState({ status: 'loading' });
-  const range = useMemo(() => lastNDays(days), [days]);
+
+  const range = useMemo(
+    () => (period.days ? lastNDays(period.days) : { from: period.from, to: period.to }),
+    [period],
+  );
+  // The dates mock data exists for: the earliest generated day up to today.
+  const limits = useMemo(() => ({ min: lastNDays(DAYS_OF_HISTORY).from, max: lastNDays(1).to }), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,13 +45,38 @@ export default function App() {
     };
   }, [range, reloadKey]);
 
+  function selectPreset(days) {
+    setPeriod({ days });
+    setIsCustomOpen(false);
+  }
+
+  function applyCustomRange(customRange) {
+    setPeriod(customRange);
+    setIsCustomOpen(false);
+  }
+
   return (
     <>
       <header className="topbar">
         <div className="topbar-inner">
           <h1>Your spending</h1>
-          <PeriodPicker value={days} onChange={setDays} />
+          <PeriodPicker
+            value={period.days ?? 'custom'}
+            isCustomOpen={isCustomOpen}
+            onSelectPreset={selectPreset}
+            onToggleCustom={() => setIsCustomOpen((open) => !open)}
+          />
         </div>
+        {isCustomOpen && (
+          <div className="topbar-inner topbar-custom">
+            <CustomRangeForm
+              initialRange={range}
+              limits={limits}
+              onApply={applyCustomRange}
+              onCancel={() => setIsCustomOpen(false)}
+            />
+          </div>
+        )}
       </header>
 
       <main className="page" aria-busy={state.status === 'loading'}>
