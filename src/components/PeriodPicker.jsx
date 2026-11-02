@@ -4,7 +4,8 @@ const PERIODS = [
   { days: 180, label: '6 months' },
 ];
 
-export default function PeriodPicker({ value, onChange }) {
+/** `value` is the selected number of days, or 'custom' for a custom range. */
+export default function PeriodPicker({ value, isCustomOpen, onSelectPreset, onToggleCustom }) {
   return (
     <div className="period-picker" role="group" aria-label="Time period">
       {PERIODS.map((period) => (
@@ -12,11 +13,20 @@ export default function PeriodPicker({ value, onChange }) {
           key={period.days}
           type="button"
           aria-pressed={value === period.days}
-          onClick={() => onChange(period.days)}
+          onClick={() => onSelectPreset(period.days)}
         >
           {period.label}
         </button>
       ))}
+      <button
+        type="button"
+        aria-pressed={value === 'custom'}
+        aria-expanded={isCustomOpen}
+        aria-controls="custom-range"
+        onClick={onToggleCustom}
+      >
+        Custom
+      </button>
     </div>
   );
 }
