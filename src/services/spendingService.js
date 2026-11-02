@@ -1,5 +1,6 @@
 import { CATEGORIES } from '../data/categories';
-import { generateTransactions } from '../data/mockTransactions';
+import { DAYS_OF_HISTORY, generateTransactions } from '../data/mockTransactions';
+import { addDays, daysInRange, lastNDays } from '../utils/dates';
 
 const DEFAULT_LATENCY_MS = 300;
 const MAX_PAGE_SIZE = 100;
@@ -8,6 +9,10 @@ const wait = (ms) => (ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms))
 const roundCents = (value) => Math.round(value * 100) / 100;
 const largestFirst = (map) =>
   [...map.values()].map((item) => ({ ...item, total: roundCents(item.total) })).sort((a, b) => b.total - a.total);
+
+/** Change as a fraction (0.12 = 12% more), or null when there was nothing before to compare with. */
+const changeRatio = (current, previous) =>
+  previous === 0 ? null : Math.round(((current - previous) / previous) * 1000) / 1000;
 
 /** Ways transactions can be sorted, each in ascending order. The id breaks ties so order is stable. */
 const SORTS = {
@@ -23,6 +28,7 @@ const SORTS = {
 export function createSpendingService({
   transactions = generateTransactions(),
   latencyMs = DEFAULT_LATENCY_MS,
+  historyStart = lastNDays(DAYS_OF_HISTORY).from,
 } = {}) {
   function inRange({ from, to }) {
     if (!from || !to) throw new Error('A date range with "from" and "to" is required.');
@@ -41,6 +47,18 @@ export function createSpendingService({
     return inRange({ from, to })
       .filter((t) => !category || t.category === category)
       .filter((t) => !query || t.merchant.toLowerCase().includes(query));
+  }
+
+  /** Total spending in a range, and spending per category. */
+  function spendingIn(range) {
+    const byCategory = new Map();
+    let total = 0;
+    for (const t of inRange(range)) {
+      if (t.type !== 'DEBIT') continue;
+      total += t.amount;
+      byCategory.set(t.category, (byCategory.get(t.category) ?? 0) + t.amount);
+    }
+    return { total, byCategory };
   }
 
   /** All matching transactions, newest first. */
@@ -138,7 +156,48 @@ export function createSpendingService({
       .sort((a, b) => a.month.localeCompare(b.month));
   }
 
-  return { getTransactions, getTransactionPage, getSummary, getMonthlyTotals };
+  /**
+   * Compares spending in the range with the same number of days just before it.
+   * Categories are ordered by the size of their change, biggest first.
+   */
+  async function getComparison({ from, to } = {}) {
+    await wait(latencyMs);
+    inRange({ from, to }); // Validates the range.
+
+    const days = daysInRange({ from, to });
+    const previous = { from: addDays(from, -days), to: addDays(from, -1) };
+    if (previous.from < historyStart) {
+      return { available: false, days, current: { from, to }, previous };
+    }
+
+    const now = spendingIn({ from, to });
+    const before = spendingIn(previous);
+    const categories = [...new Set([...now.byCategory.keys(), ...before.byCategory.keys()])]
+      .map((category) => {
+        const current = roundCents(now.byCategory.get(category) ?? 0);
+        const earlier = roundCents(before.byCategory.get(category) ?? 0);
+        return {
+          category,
+          current,
+          previous: earlier,
+          change: roundCents(current - earlier),
+          percent: changeRatio(current, earlier),
+        };
+      })
+      .sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+
+    return {
+      available: true,
+      days,
+      current: { from, to, totalSpent: roundCents(now.total) },
+      previous: { ...previous, totalSpent: roundCents(before.total) },
+      change: roundCents(now.total - before.total),
+      percent: changeRatio(now.total, before.total),
+      categories,
+    };
+  }
+
+  return { getTransactions, getTransactionPage, getSummary, getMonthlyTotals, getComparison };
 }
 
 export const spendingService = createSpendingService();
