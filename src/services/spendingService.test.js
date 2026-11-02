@@ -79,6 +79,36 @@ describe('spendingService', () => {
     ).rejects.toThrow('Unknown category');
   });
 
+  it('pages through matching transactions in date order', async () => {
+    const range = { from: '2026-01-01', to: '2026-06-30' };
+    const all = await service.getTransactions(range);
+    const first = await service.getTransactionPage({ ...range, pageSize: 10 });
+    const second = await service.getTransactionPage({ ...range, page: 2, pageSize: 10 });
+
+    expect(first.total).toBe(all.length);
+    expect(first.totalPages).toBe(Math.ceil(all.length / 10));
+    expect(first.items).toEqual(all.slice(0, 10));
+    expect(second.items).toEqual(all.slice(10, 20));
+  });
+
+  it('sorts by amount, lowest first', async () => {
+    const { items } = await service.getTransactionPage({
+      from: '2026-01-01',
+      to: '2026-06-30',
+      sortBy: 'amount',
+      sortDirection: 'asc',
+      pageSize: 50,
+    });
+
+    items.slice(1).forEach((t, i) => expect(t.amount).toBeGreaterThanOrEqual(items[i].amount));
+  });
+
+  it('rejects an invalid page', async () => {
+    await expect(
+      service.getTransactionPage({ from: '2026-01-01', to: '2026-06-30', page: 0 }),
+    ).rejects.toThrow('"page" must be a whole number');
+  });
+
   it('rejects a reversed date range', async () => {
     await expect(service.getTransactions({ from: '2026-02-01', to: '2026-01-01' })).rejects.toThrow(
       '"from" must be on or before "to"',
