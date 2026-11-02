@@ -1,4 +1,4 @@
-export const PERIODS = [
+const PERIODS = [
   { days: 30, label: '30 days' },
   { days: 90, label: '3 months' },
   { days: 180, label: '6 months' },
