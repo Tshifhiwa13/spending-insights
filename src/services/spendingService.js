@@ -2,11 +2,18 @@ import { CATEGORIES } from '../data/categories';
 import { generateTransactions } from '../data/mockTransactions';
 
 const DEFAULT_LATENCY_MS = 300;
+const MAX_PAGE_SIZE = 100;
 
 const wait = (ms) => (ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve());
 const roundCents = (value) => Math.round(value * 100) / 100;
 const largestFirst = (map) =>
   [...map.values()].map((item) => ({ ...item, total: roundCents(item.total) })).sort((a, b) => b.total - a.total);
+
+/** Ways transactions can be sorted, each in ascending order. The id breaks ties so order is stable. */
+const SORTS = {
+  date: (a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id),
+  amount: (a, b) => a.amount - b.amount || a.id.localeCompare(b.id),
+};
 
 /**
  * Mock data service. It behaves like a real API (async, validates input, small delay),
@@ -24,12 +31,8 @@ export function createSpendingService({
     return transactions.filter((t) => t.date >= from && t.date <= to);
   }
 
-  /**
-   * Transactions in the range, newest first.
-   * Optional filters: `category` (exact match) and `search` (merchant name, case-insensitive).
-   */
-  async function getTransactions({ from, to, category, search } = {}) {
-    await wait(latencyMs);
+  /** Transactions in the range that match the optional category and merchant search. */
+  function filterTransactions({ from, to, category, search }) {
     if (category && !CATEGORIES[category]) {
       throw new Error(`Unknown category "${category}".`);
     }
@@ -37,8 +40,49 @@ export function createSpendingService({
 
     return inRange({ from, to })
       .filter((t) => !category || t.category === category)
-      .filter((t) => !query || t.merchant.toLowerCase().includes(query))
-      .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+      .filter((t) => !query || t.merchant.toLowerCase().includes(query));
+  }
+
+  /** All matching transactions, newest first. */
+  async function getTransactions({ from, to, category, search } = {}) {
+    await wait(latencyMs);
+    return filterTransactions({ from, to, category, search }).sort((a, b) => SORTS.date(b, a));
+  }
+
+  /** One page of matching transactions, sorted, plus the totals needed to show page controls. */
+  async function getTransactionPage({
+    from,
+    to,
+    category,
+    search,
+    sortBy = 'date',
+    sortDirection = 'desc',
+    page = 1,
+    pageSize = 10,
+  } = {}) {
+    await wait(latencyMs);
+    if (!SORTS[sortBy]) throw new Error(`Cannot sort by "${sortBy}".`);
+    if (sortDirection !== 'asc' && sortDirection !== 'desc') {
+      throw new Error('"sortDirection" must be "asc" or "desc".');
+    }
+    if (!Number.isInteger(page) || page < 1) throw new Error('"page" must be a whole number from 1.');
+    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > MAX_PAGE_SIZE) {
+      throw new Error(`"pageSize" must be between 1 and ${MAX_PAGE_SIZE}.`);
+    }
+
+    const direction = sortDirection === 'asc' ? 1 : -1;
+    const matching = filterTransactions({ from, to, category, search }).sort(
+      (a, b) => direction * SORTS[sortBy](a, b),
+    );
+    const start = (page - 1) * pageSize;
+
+    return {
+      items: matching.slice(start, start + pageSize),
+      total: matching.length,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(matching.length / pageSize)),
+    };
   }
 
   /** Totals spent and received, money in per source, and spending per category (largest first). */
@@ -94,7 +138,7 @@ export function createSpendingService({
       .sort((a, b) => a.month.localeCompare(b.month));
   }
 
-  return { getTransactions, getSummary, getMonthlyTotals };
+  return { getTransactions, getTransactionPage, getSummary, getMonthlyTotals };
 }
 
 export const spendingService = createSpendingService();

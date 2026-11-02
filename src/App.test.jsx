@@ -3,14 +3,15 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 
-const { getSummary, getTransactions, getMonthlyTotals } = vi.hoisted(() => ({
+const { getSummary, getTransactions, getTransactionPage, getMonthlyTotals } = vi.hoisted(() => ({
   getSummary: vi.fn(),
   getTransactions: vi.fn(),
+  getTransactionPage: vi.fn(),
   getMonthlyTotals: vi.fn(),
 }));
 
 vi.mock('./services/spendingService', () => ({
-  spendingService: { getSummary, getTransactions, getMonthlyTotals },
+  spendingService: { getSummary, getTransactions, getTransactionPage, getMonthlyTotals },
 }));
 
 const summary = {
@@ -33,6 +34,7 @@ describe('App', () => {
     vi.resetAllMocks();
     getSummary.mockResolvedValue(summary);
     getTransactions.mockResolvedValue(transactions);
+    getTransactionPage.mockResolvedValue({ items: transactions, total: 1, page: 1, pageSize: 10, totalPages: 1 });
     getMonthlyTotals.mockResolvedValue(monthly);
   });
 

@@ -3,10 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TransactionsPanel from './TransactionsPanel';
 
-const { getTransactions } = vi.hoisted(() => ({ getTransactions: vi.fn() }));
+const { getTransactionPage } = vi.hoisted(() => ({ getTransactionPage: vi.fn() }));
 
 vi.mock('../services/spendingService', () => ({
-  spendingService: { getTransactions },
+  spendingService: { getTransactionPage },
 }));
 
 // Defined once, outside the tests, so it doesn't change between renders.
@@ -17,18 +17,29 @@ const transactions = [
   { id: 'txn-1', date: '2026-10-20', merchant: 'Shell', category: 'TRANSPORT', type: 'DEBIT', amount: 900 },
 ];
 
+const pageOf = (items, overrides = {}) => ({
+  items,
+  total: items.length,
+  page: 1,
+  pageSize: 10,
+  totalPages: 1,
+  ...overrides,
+});
+
+const lastRequest = () => getTransactionPage.mock.lastCall[0];
+
 describe('TransactionsPanel', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    getTransactions.mockResolvedValue(transactions);
+    getTransactionPage.mockResolvedValue(pageOf(transactions));
   });
 
-  it('shows the transactions for the date range', async () => {
+  it('shows the first page, newest first', async () => {
     render(<TransactionsPanel range={range} />);
 
     expect(await screen.findByText('Spar')).toBeInTheDocument();
     expect(screen.getByText('2 found')).toBeInTheDocument();
-    expect(getTransactions).toHaveBeenCalledWith(expect.objectContaining(range));
+    expect(lastRequest()).toMatchObject({ ...range, page: 1, sortBy: 'date', sortDirection: 'desc' });
   });
 
   it('searches by merchant once typing pauses', async () => {
@@ -37,9 +48,7 @@ describe('TransactionsPanel', () => {
 
     await userEvent.type(screen.getByLabelText('Search merchant'), 'spar');
 
-    await waitFor(() =>
-      expect(getTransactions).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'spar' })),
-    );
+    await waitFor(() => expect(lastRequest()).toMatchObject({ search: 'spar' }));
   });
 
   it('filters by category', async () => {
@@ -48,21 +57,44 @@ describe('TransactionsPanel', () => {
 
     await userEvent.selectOptions(screen.getByLabelText('Category'), 'GROCERIES');
 
-    await waitFor(() =>
-      expect(getTransactions).toHaveBeenLastCalledWith(expect.objectContaining({ category: 'GROCERIES' })),
-    );
+    await waitFor(() => expect(lastRequest()).toMatchObject({ category: 'GROCERIES' }));
+  });
+
+  it('sorts by amount, then flips the direction', async () => {
+    render(<TransactionsPanel range={range} />);
+    await screen.findByText('Spar');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Amount' }));
+    await waitFor(() => expect(lastRequest()).toMatchObject({ sortBy: 'amount', sortDirection: 'desc' }));
+    expect(screen.getByRole('columnheader', { name: 'Amount' })).toHaveAttribute('aria-sort', 'descending');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Amount' }));
+    await waitFor(() => expect(lastRequest()).toMatchObject({ sortBy: 'amount', sortDirection: 'asc' }));
+  });
+
+  it('moves to the next page, and back to page 1 when a filter changes', async () => {
+    getTransactionPage.mockResolvedValue(pageOf(transactions, { total: 25, totalPages: 3 }));
+    render(<TransactionsPanel range={range} />);
+    expect(await screen.findByText('Page 1 of 3')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => expect(lastRequest()).toMatchObject({ page: 2 }));
+
+    await userEvent.selectOptions(screen.getByLabelText('Category'), 'TRANSPORT');
+    await waitFor(() => expect(lastRequest()).toMatchObject({ category: 'TRANSPORT', page: 1 }));
   });
 
   it('shows an empty state and clears the filters', async () => {
     render(<TransactionsPanel range={range} />);
     await screen.findByText('Spar');
 
-    getTransactions.mockResolvedValue([]);
+    getTransactionPage.mockResolvedValue(pageOf([]));
     await userEvent.selectOptions(screen.getByLabelText('Category'), 'HEALTH');
 
     expect(await screen.findByText('No transactions match your filters.')).toBeInTheDocument();
 
-    getTransactions.mockResolvedValue(transactions);
+    getTransactionPage.mockResolvedValue(pageOf(transactions));
     await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
 
     expect(screen.getByLabelText('Category')).toHaveValue('');
@@ -70,7 +102,7 @@ describe('TransactionsPanel', () => {
   });
 
   it('shows an error when loading fails', async () => {
-    getTransactions.mockRejectedValue(new Error('boom'));
+    getTransactionPage.mockRejectedValue(new Error('boom'));
     vi.spyOn(console, 'error').mockImplementation(() => {});
     render(<TransactionsPanel range={range} />);
 
