@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { generateTransactions, MONTHLY_SALARY } from '../data/mockTransactions';
+import { lastNDays } from '../utils/dates';
 import { createSpendingService } from './spendingService';
 
 const today = new Date(2026, 5, 30); // 30 June 2026
-const service = createSpendingService({ transactions: generateTransactions(today), latencyMs: 0 });
+const service = createSpendingService({
+  transactions: generateTransactions(today),
+  latencyMs: 0,
+  historyStart: lastNDays(180, today).from,
+});
 
 describe('spendingService', () => {
   it('category totals add up to total spent', async () => {
@@ -107,6 +112,33 @@ describe('spendingService', () => {
     await expect(
       service.getTransactionPage({ from: '2026-01-01', to: '2026-06-30', page: 0 }),
     ).rejects.toThrow('"page" must be a whole number');
+  });
+
+  it('compares spending with the same number of days just before', async () => {
+    const comparison = await service.getComparison({ from: '2026-06-01', to: '2026-06-30' });
+    const june = await service.getSummary({ from: '2026-06-01', to: '2026-06-30' });
+    const may = await service.getSummary({ from: '2026-05-02', to: '2026-05-31' });
+
+    expect(comparison.available).toBe(true);
+    expect(comparison.days).toBe(30);
+    expect(comparison.previous).toMatchObject({ from: '2026-05-02', to: '2026-05-31' });
+    expect(comparison.current.totalSpent).toBeCloseTo(june.totalSpent, 2);
+    expect(comparison.previous.totalSpent).toBeCloseTo(may.totalSpent, 2);
+    expect(comparison.change).toBeCloseTo(june.totalSpent - may.totalSpent, 2);
+  });
+
+  it('lists category changes, biggest first, adding up to the total change', async () => {
+    const comparison = await service.getComparison({ from: '2026-06-01', to: '2026-06-30' });
+    const sizes = comparison.categories.map((c) => Math.abs(c.change));
+
+    expect(sizes).toEqual([...sizes].sort((a, b) => b - a));
+    expect(comparison.categories.reduce((sum, c) => sum + c.change, 0)).toBeCloseTo(comparison.change, 2);
+  });
+
+  it('says when there is not enough history to compare', async () => {
+    const comparison = await service.getComparison({ from: '2026-03-01', to: '2026-06-30' });
+
+    expect(comparison.available).toBe(false);
   });
 
   it('rejects a reversed date range', async () => {

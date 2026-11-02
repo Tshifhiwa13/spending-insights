@@ -4,6 +4,7 @@ import MoneySummary from './components/MoneySummary';
 import MonthlyTrend from './components/MonthlyTrend';
 import PeriodPicker from './components/PeriodPicker';
 import SpendingDonut from './components/SpendingDonut';
+import SpendingInsights from './components/SpendingInsights';
 import StatementInfo from './components/StatementInfo';
 import TransactionsPanel from './components/TransactionsPanel';
 import { categoryLabel } from './data/categories';
@@ -29,9 +30,13 @@ export default function App() {
     let cancelled = false;
     setState({ status: 'loading' });
 
-    Promise.all([spendingService.getSummary(range), spendingService.getMonthlyTotals(range)])
-      .then(([summary, monthly]) => {
-        if (!cancelled) setState({ status: 'ready', summary, monthly });
+    Promise.all([
+      spendingService.getSummary(range),
+      spendingService.getMonthlyTotals(range),
+      spendingService.getComparison(range),
+    ])
+      .then(([summary, monthly, comparison]) => {
+        if (!cancelled) setState({ status: 'ready', summary, monthly, comparison });
       })
       .catch((error) => {
         if (cancelled) return;
@@ -91,24 +96,29 @@ export default function App() {
           </div>
         )}
 
-        {state.status === 'ready' && <Dashboard summary={state.summary} monthly={state.monthly} range={range} />}
+        {state.status === 'ready' && (
+          <Dashboard summary={state.summary} monthly={state.monthly} comparison={state.comparison} range={range} />
+        )}
       </main>
     </>
   );
 }
 
-function Dashboard({ summary, monthly, range }) {
+function Dashboard({ summary, monthly, comparison, range }) {
   const moneyIn = summary.incomeBySource.map((s) => ({ label: s.source, total: s.total }));
   const moneyOut = summary.byCategory.map((c) => ({ label: categoryLabel(c.category), total: c.total }));
 
   return (
     <div className="dashboard">
-      <StatementInfo
-        from={summary.from}
-        to={summary.to}
-        totalIncome={summary.totalIncome}
-        totalSpent={summary.totalSpent}
-      />
+      <div className="grid-2">
+        <StatementInfo
+          from={summary.from}
+          to={summary.to}
+          totalIncome={summary.totalIncome}
+          totalSpent={summary.totalSpent}
+        />
+        <SpendingInsights comparison={comparison} />
+      </div>
 
       <MonthlyTrend months={monthly} />
 

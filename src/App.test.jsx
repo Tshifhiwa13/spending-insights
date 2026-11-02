@@ -4,15 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { lastNDays } from './utils/dates';
 
-const { getSummary, getTransactions, getTransactionPage, getMonthlyTotals } = vi.hoisted(() => ({
+const { getSummary, getTransactions, getTransactionPage, getMonthlyTotals, getComparison } = vi.hoisted(() => ({
   getSummary: vi.fn(),
   getTransactions: vi.fn(),
   getTransactionPage: vi.fn(),
   getMonthlyTotals: vi.fn(),
+  getComparison: vi.fn(),
 }));
 
 vi.mock('./services/spendingService', () => ({
-  spendingService: { getSummary, getTransactions, getTransactionPage, getMonthlyTotals },
+  spendingService: { getSummary, getTransactions, getTransactionPage, getMonthlyTotals, getComparison },
 }));
 
 const summary = {
@@ -37,6 +38,7 @@ describe('App', () => {
     getTransactions.mockResolvedValue(transactions);
     getTransactionPage.mockResolvedValue({ items: transactions, total: 1, page: 1, pageSize: 10, totalPages: 1 });
     getMonthlyTotals.mockResolvedValue(monthly);
+    getComparison.mockResolvedValue({ available: false, days: 30 });
   });
 
   it('shows the statement, money in and out, and transactions once data loads', async () => {
@@ -49,6 +51,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Money out' })).toBeInTheDocument();
     expect(screen.getAllByText('Employer Salary').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Groceries').length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: 'Compared with the previous period' })).toBeInTheDocument();
   });
 
   it('loads a longer period when another option is chosen', async () => {

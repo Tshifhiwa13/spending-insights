@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lastNDays, toIsoDate, validateRange } from './dates';
+import { addDays, daysInRange, lastNDays, toIsoDate, validateRange } from './dates';
 
 const limits = { min: '2026-05-06', max: '2026-11-02' };
 
@@ -10,6 +10,17 @@ describe('dates', () => {
 
   it('gives the last N days, including today', () => {
     expect(lastNDays(30, new Date(2026, 10, 2))).toEqual({ from: '2026-10-04', to: '2026-11-02' });
+  });
+
+  it('adds and subtracts days across month and year ends', () => {
+    expect(addDays('2026-01-31', 1)).toBe('2026-02-01');
+    expect(addDays('2026-03-01', -1)).toBe('2026-02-28');
+    expect(addDays('2026-01-01', -1)).toBe('2025-12-31');
+  });
+
+  it('counts the days in a range, including both ends', () => {
+    expect(daysInRange({ from: '2026-08-01', to: '2026-08-31' })).toBe(31);
+    expect(daysInRange({ from: '2026-08-01', to: '2026-08-01' })).toBe(1);
   });
 
   it('accepts a valid range, including a single day', () => {
