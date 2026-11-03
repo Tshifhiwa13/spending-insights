@@ -62,6 +62,10 @@ export default function App() {
 
   return (
     <>
+      <a className="skip-link" href="#main">
+        Skip to main content
+      </a>
+
       <header className="topbar">
         <div className="topbar-inner">
           <h1>Your spending</h1>
@@ -84,7 +88,7 @@ export default function App() {
         )}
       </header>
 
-      <main className="page" aria-busy={state.status === 'loading'}>
+      <main id="main" tabIndex={-1} className="page" aria-busy={state.status === 'loading'}>
         {state.status === 'loading' && <p className="status">Loading your spending…</p>}
 
         {state.status === 'error' && (

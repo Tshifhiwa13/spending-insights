@@ -41,6 +41,16 @@
 body { margin: 0; }
 h1, h2 { margin: 0; }
 
+/* Hidden until focused with the keyboard, then shown at the top left. */
+.skip-link {
+  position: absolute; left: 1rem; top: -4rem; z-index: 10;
+  padding: 0.6rem 1rem; border-radius: 6px; font-weight: 600;
+  background: var(--on-navy); color: var(--navy-deep); text-decoration: none;
+}
+.skip-link:focus { top: 1rem; }
+.skip-link:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+main:focus { outline: none; }
+
 /* ---- Top bar ---- */
 .topbar { background: var(--navy-deep); color: var(--on-navy); }
 .topbar-inner {
