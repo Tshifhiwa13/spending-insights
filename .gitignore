@@ -5,3 +5,5 @@ coverage/
 .idea/
 .DS_Store
 *.log
+playwright-report/
+test-results/
