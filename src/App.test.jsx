@@ -76,6 +76,18 @@ describe('App', () => {
     expect(getSummary).toHaveBeenCalledTimes(2);
     expect(getMonthlyTotals).toHaveBeenCalledTimes(2);
   });
+  
+    it('keeps the current dashboard on screen while a new period loads', async () => {
+    render(<App />);
+    await screen.findByText('Checkers');
+
+    // The next summary never arrives, so the app stays in its "updating" state.
+    getSummary.mockReturnValue(new Promise(() => {}));
+    await userEvent.click(screen.getByRole('button', { name: '3 months' }));
+
+    expect(screen.getByText('Updating your spending…')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Statement information' })).toBeInTheDocument();
+  });
 
   it('applies a custom date range', async () => {
     render(<App />);
