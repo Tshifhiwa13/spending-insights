@@ -64,8 +64,7 @@ export function generateTransactions(today = new Date(), days = DAYS_OF_HISTORY)
         amount: MONTHLY_SALARY,
       });
     }
-
-    const purchasesToday = Math.floor(random() * 4);
+    const purchasesToday = Math.floor(random() * 3);
     for (let i = 0; i < purchasesToday; i++) {
       const category = pick(random, SPEND_CATEGORIES);
       const [min, max] = AMOUNT_RANGES[category];
