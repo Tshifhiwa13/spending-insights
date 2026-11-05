@@ -163,6 +163,17 @@ button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 .legend-share { color: var(--muted); font-variant-numeric: tabular-nums; }
 
+/* ---- Trend chart: using the theme's colours so it reads well in dark mode ---- */
+.chart .recharts-cartesian-axis-tick-value { fill: var(--muted); }
+.chart .recharts-cartesian-grid line { stroke: var(--line); }
+.chart .recharts-legend-item-text { color: var(--ink) !important; }
+/* Recharts sets the tooltip's colours inline, so !important is needed to override them. */
+.chart .recharts-default-tooltip {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+  color: var(--ink);
+}
+
 /* ---- Spending comparison ---- */
 .insight-headline { margin: 0 0 0.85rem; font-size: 1.05rem; font-weight: 600; line-height: 1.4; }
 .insight-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
