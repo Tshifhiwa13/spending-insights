@@ -11,7 +11,7 @@ vi.mock('../services/spendingService', () => ({
 const profile = {
   id: '12345',
   name: 'Tshifhiwa Makherana',
-  email: 'fifi@gmail.com',
+  email: 'fifi@example.com',
   accountType: 'Savings account',
   joinDate: '2025-08-13',
   totalSpent: 15420.5,
@@ -29,7 +29,7 @@ describe('CustomerProfile', () => {
 
     expect(await screen.findByText('Tshifhiwa Makherana')).toBeInTheDocument();
     expect(screen.getByText('TM')).toBeInTheDocument();
-    expect(screen.getByText('fifi@gmail.com')).toBeInTheDocument();
+    expect(screen.getByText('fifi@example.com')).toBeInTheDocument();
     expect(screen.getByText('12345')).toBeInTheDocument();
     expect(screen.getByText('Savings account')).toBeInTheDocument();
     expect(screen.getByText('13/08/2025')).toBeInTheDocument();
