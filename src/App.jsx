@@ -29,7 +29,9 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    setState({ status: 'loading' });
+    // If a dashboard is already showing, keep it on screen while the new period loads,
+    // instead of blanking the page. Only the very first load shows the loading message.
+    setState((previous) => (previous.status === 'ready' ? { ...previous, isUpdating: true } : { status: 'loading' }));
 
     Promise.all([
       spendingService.getSummary(range),
@@ -37,7 +39,7 @@ export default function App() {
       spendingService.getComparison(range),
     ])
       .then(([summary, monthly, comparison]) => {
-        if (!cancelled) setState({ status: 'ready', summary, monthly, comparison });
+        if (!cancelled) setState({ status: 'ready', summary, monthly, comparison, isUpdating: false });
       })
       .catch((error) => {
         if (cancelled) return;
@@ -60,6 +62,11 @@ export default function App() {
     setPeriod(customRange);
     setIsCustomOpen(false);
   }
+
+  const isBusy = state.status === 'loading' || Boolean(state.isUpdating);
+  let statusMessage = '';
+  if (state.status === 'loading') statusMessage = 'Loading your spending…';
+  else if (state.isUpdating) statusMessage = 'Updating your spending…';
 
   return (
     <>
@@ -89,10 +96,13 @@ export default function App() {
         )}
       </header>
 
-      <main id="main" tabIndex={-1} className="page" aria-busy={state.status === 'loading'}>
+      <main id="main" tabIndex={-1} className="page" aria-busy={isBusy}>
         <CustomerProfile />
 
-        {state.status === 'loading' && <p className="status">Loading your spending…</p>}
+        {/* One status region, so screen readers announce loading and updating. */}
+        <p className="page-status" role="status">
+          {statusMessage}
+        </p>
 
         {state.status === 'error' && (
           <div className="status status-error" role="alert">
@@ -104,19 +114,25 @@ export default function App() {
         )}
 
         {state.status === 'ready' && (
-          <Dashboard summary={state.summary} monthly={state.monthly} comparison={state.comparison} range={range} />
+          <Dashboard
+            summary={state.summary}
+            monthly={state.monthly}
+            comparison={state.comparison}
+            range={range}
+            isUpdating={state.isUpdating}
+          />
         )}
       </main>
     </>
   );
 }
 
-function Dashboard({ summary, monthly, comparison, range }) {
+function Dashboard({ summary, monthly, comparison, range, isUpdating }) {
   const moneyIn = summary.incomeBySource.map((s) => ({ label: s.source, total: s.total }));
   const moneyOut = summary.byCategory.map((c) => ({ label: categoryLabel(c.category), total: c.total }));
 
   return (
-    <div className="dashboard">
+    <div className={isUpdating ? 'dashboard is-updating' : 'dashboard'}>
       <div className="grid-2">
         <StatementInfo
           from={summary.from}
