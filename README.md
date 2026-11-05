@@ -41,7 +41,7 @@ Requirements: [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 docker build -t spending-insights .
 docker run --rm -p 3000:80 spending-insights
 ```
-
+Leave it running then open the browser
 Open http://localhost:3000.
 
 The Docker build runs the linter and unit tests first, so an image is only produced from code that passes.
