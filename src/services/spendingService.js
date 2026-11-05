@@ -1,4 +1,5 @@
 import { CATEGORIES } from '../data/categories';
+import { CUSTOMER } from '../data/customer';
 import { DAYS_OF_HISTORY, generateTransactions } from '../data/mockTransactions';
 import { addDays, daysInRange, lastNDays } from '../utils/dates';
 
@@ -29,6 +30,7 @@ export function createSpendingService({
   transactions = generateTransactions(),
   latencyMs = DEFAULT_LATENCY_MS,
   historyStart = lastNDays(DAYS_OF_HISTORY).from,
+  customer = CUSTOMER,
 } = {}) {
   function inRange({ from, to }) {
     if (!from || !to) throw new Error('A date range with "from" and "to" is required.');
@@ -59,6 +61,16 @@ export function createSpendingService({
       byCategory.set(t.category, (byCategory.get(t.category) ?? 0) + t.amount);
     }
     return { total, byCategory };
+  }
+
+  /** The customer's details, with total spending across all available history. */
+  async function getCustomerProfile() {
+    await wait(latencyMs);
+    const totalSpent = transactions
+      .filter((t) => t.type === 'DEBIT')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    return { ...customer, totalSpent: roundCents(totalSpent), spentSince: historyStart };
   }
 
   /** All matching transactions, newest first. */
@@ -197,7 +209,7 @@ export function createSpendingService({
     };
   }
 
-  return { getTransactions, getTransactionPage, getSummary, getMonthlyTotals, getComparison };
+  return { getCustomerProfile, getTransactions, getTransactionPage, getSummary, getMonthlyTotals, getComparison };
 }
 
 export const spendingService = createSpendingService();
