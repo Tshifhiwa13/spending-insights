@@ -39,7 +39,7 @@ Requirements: [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
 ```bash
 docker build -t spending-insights .
-docker run --rm -p 3000:80 spending-insights
+docker run --rm -p 3000:8080 spending-insights
 ```
 Leave it running then open the browser
 Open http://localhost:3000.
@@ -76,7 +76,7 @@ npm run build        # production build into dist/
 
 - **Lighthouse** (production build): Accessibility 100, Best Practices 100, SEO 100, Performance 99.
 - **Keyboard:** every control can be reached and used without a mouse.
-- **Security headers** in the Nginx container: Content Security Policy, clickjacking protection, `nosniff`, a referrer policy, a cross-origin opener policy and a permissions policy.
+- **Security headers** - **The container runs Nginx as a non-root user**, so a compromised web server has no administrator rights inside the container.
 
 ## Project structure
 
