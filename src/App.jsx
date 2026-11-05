@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import CustomerProfile from './components/CustomerProfile';
 import CustomRangeForm from './components/CustomRangeForm';
 import MoneySummary from './components/MoneySummary';
 import MonthlyTrend from './components/MonthlyTrend';
@@ -89,6 +90,8 @@ export default function App() {
       </header>
 
       <main id="main" tabIndex={-1} className="page" aria-busy={state.status === 'loading'}>
+        <CustomerProfile />
+
         {state.status === 'loading' && <p className="status">Loading your spending…</p>}
 
         {state.status === 'error' && (

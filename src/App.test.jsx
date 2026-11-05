@@ -4,16 +4,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { lastNDays } from './utils/dates';
 
-const { getSummary, getTransactions, getTransactionPage, getMonthlyTotals, getComparison } = vi.hoisted(() => ({
-  getSummary: vi.fn(),
-  getTransactions: vi.fn(),
-  getTransactionPage: vi.fn(),
-  getMonthlyTotals: vi.fn(),
-  getComparison: vi.fn(),
-}));
+const { getSummary, getTransactions, getTransactionPage, getMonthlyTotals, getComparison, getCustomerProfile } =
+  vi.hoisted(() => ({
+    getSummary: vi.fn(),
+    getTransactions: vi.fn(),
+    getTransactionPage: vi.fn(),
+    getMonthlyTotals: vi.fn(),
+    getComparison: vi.fn(),
+    getCustomerProfile: vi.fn(),
+  }));
 
 vi.mock('./services/spendingService', () => ({
-  spendingService: { getSummary, getTransactions, getTransactionPage, getMonthlyTotals, getComparison },
+  spendingService: { getSummary, getTransactions, getTransactionPage, getMonthlyTotals, getComparison, getCustomerProfile },
 }));
 
 const summary = {
@@ -39,6 +41,15 @@ describe('App', () => {
     getTransactionPage.mockResolvedValue({ items: transactions, total: 1, page: 1, pageSize: 10, totalPages: 1 });
     getMonthlyTotals.mockResolvedValue(monthly);
     getComparison.mockResolvedValue({ available: false, days: 30 });
+    getCustomerProfile.mockResolvedValue({
+      id: '12345',
+      name: 'Tshifhiwa Makherana',
+      email: 'fifi@gmail.com',
+      accountType: 'Savings account',
+      joinDate: '2025-08-13',
+      totalSpent: 15420.5,
+      spentSince: '2026-05-09',
+    });
   });
 
   it('shows the statement, money in and out, and transactions once data loads', async () => {
@@ -52,6 +63,7 @@ describe('App', () => {
     expect(screen.getAllByText('Employer Salary').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Groceries').length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { name: 'Compared with the previous period' })).toBeInTheDocument();
+    expect(screen.getByText('Tshifhiwa Makherana')).toBeInTheDocument();
   });
 
   it('loads a longer period when another option is chosen', async () => {
