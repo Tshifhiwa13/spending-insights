@@ -141,6 +141,20 @@ describe('spendingService', () => {
     expect(comparison.available).toBe(false);
   });
 
+  it('builds the customer profile with spending across all history', async () => {
+    const profile = await service.getCustomerProfile();
+    const allHistory = await service.getSummary({ from: lastNDays(180, today).from, to: '2026-06-30' });
+
+    expect(profile).toMatchObject({
+      id: '12345',
+      name: 'Tshifhiwa Makherana',
+      accountType: 'Savings account',
+      joinDate: '2025-08-13',
+      spentSince: lastNDays(180, today).from,
+    });
+    expect(profile.totalSpent).toBeCloseTo(allHistory.totalSpent, 2);
+  });
+
   it('rejects a reversed date range', async () => {
     await expect(service.getTransactions({ from: '2026-02-01', to: '2026-01-01' })).rejects.toThrow(
       '"from" must be on or before "to"',
