@@ -76,7 +76,7 @@ export default function App() {
 
       <header className="topbar">
         <div className="topbar-inner">
-          <h1>Your spending</h1>
+          <h1>Spending Insights</h1>
           <PeriodPicker
             value={period.days ?? 'custom'}
             isCustomOpen={isCustomOpen}
