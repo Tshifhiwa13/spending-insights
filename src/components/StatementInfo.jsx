@@ -25,7 +25,10 @@ export default function StatementInfo({ from, to, totalIncome, totalSpent }) {
         </div>
         <div className="statement-net">
           <dt>Net for period</dt>
-          <dd className={net < 0 ? 'money-out' : 'money-in'}>{formatMoney(net)}</dd>
+          <dd className={net < 0 ? 'money-out' : 'money-in'}>
+            {net < 0 ? '−' : ''}
+            {formatMoney(Math.abs(net))}
+          </dd>
         </div>
       </dl>
     </section>

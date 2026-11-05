@@ -44,7 +44,7 @@ describe('App', () => {
     getCustomerProfile.mockResolvedValue({
       id: '12345',
       name: 'Tshifhiwa Makherana',
-      email: 'fifi@gmail.com',
+      email: 'fifi@example.com',
       accountType: 'Savings account',
       joinDate: '2025-08-13',
       totalSpent: 15420.5,

@@ -2,7 +2,7 @@
 
 A responsive financial analytics dashboard that shows a customer where their money goes: by period, by category, compared with the previous period, and transaction by transaction. Built with React and JavaScript using mocked data.
 
-![Dashboard](docs/screenshots/dashboard.png.png)
+![Dashboard](docs/screenshots/dashboard.png)
 
 ## Features
 
@@ -16,7 +16,7 @@ A responsive financial analytics dashboard that shows a customer where their mon
 - **Responsive** from small phones to desktop, with **dark mode** following the device setting.
 - **Accessible:** keyboard navigation, screen reader labels, a skip link and visible focus. Lighthouse accessibility score of 100.
 
-<img src="docs/screenshots/mobile.png.png" alt="Dashboard on a phone" width="300">
+<img src="docs/screenshots/mobile.png" alt="Dashboard on a phone" width="300">
 
 ## Tech stack
 
@@ -72,7 +72,7 @@ npm run build        # production build into dist/
 
 ## Quality
 
-![Lighthouse scores](docs/screenshots/lighthouse.png.png)
+![Lighthouse scores](docs/screenshots/lighthouse.png)
 
 - **Lighthouse** (production build): Accessibility 100, Best Practices 100, SEO 100, Performance 99.
 - **Keyboard:** every control can be reached and used without a mouse.
